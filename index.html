@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주유소 표준가격(SP) 예측 프로그램</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 font-['Noto_Sans_KR']">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-gas-pump text-blue-600 text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">주유소 SP 예측 시스템</h1>
+                        <p class="text-sm text-gray-600">지능형 가격 예측 및 최적화 솔루션</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">예측 기간</p>
+                    <p class="font-semibold text-gray-800">2024년 7월 기준</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Current Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6 card-enhanced stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">6월 휘발유 입차</p>
+                        <p class="text-2xl font-bold text-blue-600">22,623</p>
+                        <p class="text-xs text-gray-500">대</p>
+                    </div>
+                    <i class="fas fa-car text-blue-500 text-3xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 card-enhanced stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">6월 경유 입차</p>
+                        <p class="text-2xl font-bold text-green-600">11,354</p>
+                        <p class="text-xs text-gray-500">대</p>
+                    </div>
+                    <i class="fas fa-truck text-green-500 text-3xl"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 card-enhanced stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">총 입차량</p>
+                        <p class="text-2xl font-bold text-purple-600">33,977</p>
+                        <p class="text-xs text-gray-500">대</p>
+                    </div>
+                    <i class="fas fa-chart-line text-purple-500 text-3xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Prediction Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Panel -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-calculator mr-3 text-blue-600"></i>
+                    가격 예측 입력
+                </h2>
+                
+                <form id="predictionForm" class="space-y-6">
+                    <!-- 기본 정보 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">국제유가 (WTI)</label>
+                            <div class="relative">
+                                <input type="number" id="wtiPrice" class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="75.50" step="0.01">
+                                <span class="absolute right-3 top-2 text-gray-500 text-sm">$/배럴</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">환율 (USD/KRW)</label>
+                            <div class="relative">
+                                <input type="number" id="exchangeRate" class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="1320" step="0.1">
+                                <span class="absolute right-3 top-2 text-gray-500 text-sm">원</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 유류세 정보 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">유류세 조정률</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="range" id="taxRate" class="flex-1" min="-30" max="30" value="0" step="1">
+                            <span id="taxRateValue" class="w-16 text-center font-semibold text-blue-600">0%</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">정부 유류세 인하/인상 정책 반영</p>
+                    </div>
+
+                    <!-- 시장 요인 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">계절적 요인</label>
+                            <select id="seasonalFactor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="1.0">일반</option>
+                                <option value="1.05">성수기 (여름휴가철)</option>
+                                <option value="0.95">비수기</option>
+                                <option value="1.1">명절 연휴</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">지역 경쟁 지수</label>
+                            <select id="competitionIndex" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="1.0">보통</option>
+                                <option value="0.98">경쟁 치열</option>
+                                <option value="1.02">경쟁 완화</option>
+                                <option value="0.95">가격 경쟁 심화</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 운영 비용 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">운영비 증감률</label>
+                            <div class="relative">
+                                <input type="number" id="operatingCost" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" step="0.1">
+                                <span class="absolute right-3 top-2 text-gray-500 text-sm">%</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">목표 마진율</label>
+                            <div class="relative">
+                                <input type="number" id="targetMargin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="8.5" step="0.1">
+                                <span class="absolute right-3 top-2 text-gray-500 text-sm">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 예측 버튼 -->
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition duration-200 flex items-center justify-center">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            7월 SP 가격 예측하기
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-bar mr-3 text-green-600"></i>
+                    예측 결과
+                </h2>
+                
+                <div id="predictionResults" class="hidden">
+                    <!-- 예측 가격 카드들 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="price-card gasoline bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                            <p class="text-sm font-medium text-blue-700">휘발유 예측 SP</p>
+                            <p id="gasolinePrediction" class="text-2xl font-bold text-blue-800">-</p>
+                            <p class="text-xs text-blue-600">원/리터</p>
+                        </div>
+                        
+                        <div class="price-card diesel bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                            <p class="text-sm font-medium text-green-700">경유 예측 SP</p>
+                            <p id="dieselPrediction" class="text-2xl font-bold text-green-800">-</p>
+                            <p class="text-xs text-green-600">원/리터</p>
+                        </div>
+                    </div>
+
+                    <!-- 가격 구성 요소 차트 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">가격 구성 요소</h3>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="priceBreakdownChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 예측 신뢰도 및 추가 정보 -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">예측 분석</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">예측 신뢰도</p>
+                                <p id="confidenceLevel" class="text-lg font-semibold text-green-600">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">가격 변동 요인</p>
+                                <p id="mainFactor" class="text-lg font-semibold text-blue-600">-</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-sm text-gray-600">권장사항</p>
+                            <p id="recommendation" class="text-sm text-gray-800 mt-1">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 초기 안내 메시지 -->
+                <div id="initialMessage" class="text-center py-12">
+                    <i class="fas fa-chart-line text-gray-300 text-6xl mb-4"></i>
+                    <p class="text-gray-500">좌측 폼을 작성하고 예측 버튼을 클릭하세요</p>
+                    <p class="text-sm text-gray-400 mt-2">AI 기반 지능형 가격 예측을 제공합니다</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Data Analysis Section -->
+        <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-history mr-3 text-orange-600"></i>
+                과거 데이터 분석 및 트렌드
+            </h2>
+            
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="historicalTrendChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <p class="text-gray-300">&copy; 2024 주유소 표준가격(SP) 예측 시스템</p>
+                <p class="text-sm text-gray-400 mt-2">지능형 가격 예측 및 최적화 솔루션</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/prediction.js"></script>
+    <script src="js/charts.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9727acfddba77e85","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.8.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
